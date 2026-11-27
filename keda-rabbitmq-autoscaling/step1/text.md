@@ -1,0 +1,93 @@
+# Deploy the Queue-Based Application
+
+RabbitMQ is an open-source message broker that helps receive, route, and send messages. A message is a package of data that represents something: perhaps an event, a task, or an email. 
+
+Incoming messages pass through an exchange, which then passes each message on to a queue, where it's eventually passed on to a consumer. 
+
+For the purposes of this tutorial, having a deep understanding of RabbitMQ is not necessary. It might help to think of it as a more powerful version of Redis.
+
+In this step, we will deploy RabbitMQ and a single worker inside Kubernetes.
+
+RabbitMQ will store pending jobs in the `task_queue`, while the worker will consume and process them.
+
+## 1. Move into the project directory
+
+`cd keda-rabbitmq-killercoda`{{exec}}
+
+## 2. Deploy RabbitMQ
+
+We'll start by applying the RabbitMQ configuration files. This will configure a minimal RabbitMQ service. 
+
+The contents of the configuration files will not be described as to keep this tutorial focused on KEDA, but you are encouraged to read them (or at least skim them over!) to get a better understanding of what's going on.
+
+Create a Kubernetes secret with placeholder RabbitMQ credentials:
+
+`kubectl apply -f kubernetes/base/rabbitmq-secret.yaml`{{exec}}
+
+Create a scaleable Deployment object for RabbitMQ using the credentials from the previous step:
+
+`kubectl apply -f kubernetes/base/rabbitmq-deployment.yaml`{{exec}}
+
+Make RabbitMQ deployment internally reachable on port 5672:
+
+`kubectl apply -f kubernetes/base/rabbitmq-service.yaml`{{exec}}
+
+Wait until RabbitMQ is ready:
+
+`kubectl rollout status deployment/rabbitmq --timeout=120s`{{exec}}
+
+## 3. Deploy the worker
+
+Now that we have RabbitMQ set up, let's deploy a worker. 
+
+A worker pulls one message at a time from RabbitMQ's queue and processes it. In this example, the "processing" is just a one-second sleep to represent work being done. After it's processed, an acknowledgement is sent back to the queue, signifying that another message can be sent. 
+
+The worker(s) use the credentials defined earlier in the tutorial to interface with the queue.
+
+Deploy one worker:
+
+`kubectl apply -f kubernetes/base/worker-deployment.yaml`{{exec}}
+
+Wait until the worker is ready:
+
+`kubectl rollout status deployment/worker --timeout=120s`{{exec}}
+
+## 4. Verify the deployment
+
+Inspect the running pods:
+
+`kubectl get pods`{{exec}}
+
+You should see both RabbitMQ and the worker running. Each pod represents one or more containers running in a shared context. In this case, there's only one container per pod.
+
+```text
+rabbitmq-...   1/1   Running
+worker-...     1/1   Running
+```
+
+Inspect the RabbitMQ Service:
+
+`kubectl get svc rabbitmq`{{exec}}
+
+You should see the corresponding Service running. This service provides a way to address pods with a stable identifier, even as the number of pods scale up and down with the Deployment.
+
+Finally, check the worker logs:
+
+`kubectl logs deployment/worker`{{exec}}
+
+The worker should report that it is waiting for messages.
+
+## What happened?
+
+The application now has two main components:
+
+```text
+RabbitMQ
+   |
+   v
+Worker
+```
+
+RabbitMQ stores pending jobs, and the worker continuously waits for new messages to process.
+
+In the next step, we will generate a workload and observe what happens when no autoscaling mechanism is configured.
