@@ -13,15 +13,18 @@
       },
       {
         "title": "Experiment 1: No Autoscaling",
-        "text": "step2/text.md"
+        "text": "step2/text.md",
+        "background": "step2/background.sh"
       },
       {
         "title": "Experiment 2: CPU-Based HPA",
-        "text": "step3/text.md"
+        "text": "step3/text.md",
+        "background": "step3/background.sh"
       },
       {
         "title": "Experiment 3: KEDA Autoscaling",
-        "text": "step4/text.md"
+        "text": "step4/text.md",
+        "background": "step4/background.sh"
       },
       {
         "title": "Compare the Results",
