@@ -13,8 +13,9 @@ for i in $(seq 1 60); do kubectl get nodes >/dev/null 2>&1 && break; sleep 2; do
 [ "$STEP" -le 1 ] && exit 0
 
 # RabbitMQ + worker are required by steps 2-4.
-kubectl apply -f kubernetes/base/ >/dev/null
+kubectl apply -f kubernetes/base/rabbitmq-secret.yaml -f kubernetes/base/rabbitmq-deployment.yaml -f kubernetes/base/rabbitmq-service.yaml >/dev/null
 kubectl rollout status deployment/rabbitmq --timeout=180s
+kubectl apply -f kubernetes/base/worker-deployment.yaml >/dev/null
 kubectl rollout status deployment/worker --timeout=180s
 
 # Remove autoscalers that would compete with the experiment of this step.
